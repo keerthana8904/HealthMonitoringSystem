@@ -1,11 +1,27 @@
-HELP.md
+# =========================
+# Build files
+# =========================
 .gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+out/
+target/
 
-### STS ###
+# =========================
+# Gradle wrapper
+# =========================
+!gradle/wrapper/gradle-wrapper.jar
+
+# =========================
+# IDEs
+# =========================
+.idea
+*.iws
+*.iml
+*.ipr
+
+# =========================
+# STS / Eclipse
+# =========================
 .apt_generated
 .classpath
 .factorypath
@@ -14,24 +30,25 @@ build/
 .springBeans
 .sts4-cache
 bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
+# =========================
+# VS Code
+# =========================
 .vscode/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Application config (VERY IMPORTANT)
+# =========================
+application.properties
+application.yml
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db

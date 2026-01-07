@@ -1,82 +1,78 @@
 package com.healthSystem.HealthMonitoring.Service;
 
 import com.healthSystem.HealthMonitoring.models.Bill;
+import com.healthSystem.HealthMonitoring.repository.BillRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-
+@Slf4j
 @Service
 public class BillService {
 
-    // temporary in-memory storage (until repository is created)
-    private final List<Bill> bills = new ArrayList<>();
+    private final BillRepository billRepository;
 
-    // GET all bills
-    public List<Bill> getAllBills() {
+    public BillService(BillRepository billRepository) {
+        this.billRepository = billRepository;
+    }
+
+    public Page<Bill> getAllBills(int page, int size) {
         try {
-            System.out.println("Service: Fetching all bills");
-            return bills;
+            return billRepository.findAll(PageRequest.of(page, size));
         } catch (Exception e) {
-            System.out.println("Error while fetching bills: " + e.getMessage());
-            return new ArrayList<>();
+            log.error("Error fetching bills", e);
+            return Page.empty();
         }
     }
 
-    // GET bill by id
     public Bill getBillById(Long id) {
         try {
-            System.out.println("Service: Fetching bill with id " + id);
-
-            for (Bill bill : bills) {
-                if (bill.getId().equals(id)) {
-                    return bill;
-                }
-            }
-            return null; // bill not found
+            return billRepository.findById(id).orElse(null);
         } catch (Exception e) {
-            System.out.println("Error while fetching bill: " + e.getMessage());
+            log.error("Error fetching bill by id", e);
             return null;
         }
     }
 
-    // CREATE bill
     public Bill createBill(Bill bill) {
         try {
-            System.out.println("Service: Creating bill");
-            bills.add(bill);
-            return bill;
+            if (bill == null ||
+                    bill.getPatientId() == null ||
+                    bill.getAmount() <= 0) {
+                return null;
+            }
+            return billRepository.save(bill);
         } catch (Exception e) {
-            System.out.println("Error while creating bill: " + e.getMessage());
+            log.error("Error creating bill", e);
             return null;
         }
     }
 
-    // UPDATE bill
     public Bill updateBill(Long id, Bill updatedBill) {
         try {
-            System.out.println("Service: Updating bill with id " + id);
+            Bill existing = billRepository.findById(id).orElse(null);
 
-            for (int i = 0; i < bills.size(); i++) {
-                if (bills.get(i).getId().equals(id)) {
-                    bills.set(i, updatedBill);
-                    return updatedBill;
-                }
+            if (existing == null || updatedBill == null) {
+                return null;
             }
-            return null; // bill not found
+
+            existing.setPatientId(updatedBill.getPatientId());
+            existing.setAmount(updatedBill.getAmount());
+            existing.setStatus(updatedBill.getStatus());
+
+            return billRepository.save(existing);
         } catch (Exception e) {
-            System.out.println("Error while updating bill: " + e.getMessage());
+            log.error("Error updating bill", e);
             return null;
         }
     }
 
-    // DELETE bill
     public void deleteBill(Long id) {
         try {
-            System.out.println("Service: Deleting bill with id " + id);
-            bills.removeIf(bill -> bill.getId().equals(id));
+            billRepository.deleteById(id);
         } catch (Exception e) {
-            System.out.println("Error while deleting bill: " + e.getMessage());
+            log.error("Error deleting bill", e);
         }
     }
 }

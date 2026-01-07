@@ -2,58 +2,95 @@ package com.healthSystem.HealthMonitoring.controllers;
 
 import com.healthSystem.HealthMonitoring.Service.PatientService;
 import com.healthSystem.HealthMonitoring.models.Patient;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;   // ✅ FIXED IMPORT
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/patients")
 public class PatientControllers {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(PatientControllers.class);
+
     private final PatientService patientService;
 
-    // Constructor Injection (BEST PRACTICE)
-    @Autowired
+    // Constructor Injection
     public PatientControllers(PatientService patientService) {
         this.patientService = patientService;
     }
 
-    // GET all patients
+    // GET all patients (PAGINATION)
     @GetMapping
-    public List<Patient> getPatients() {
-        System.out.println("Controller: Fetching all patients");
-        return patientService.getAllPatients();
+    public ResponseEntity<Page<Patient>> getPatients(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "3") int size) {
+
+        try {
+            logger.info("Fetching patients with pagination");
+            Page<Patient> patients = patientService.getAllPatients(page, size);
+            return ResponseEntity.ok(patients);
+        } catch (Exception e) {
+            logger.error("Error fetching patients", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    // POST - create patient
+    // POST
     @PostMapping
-    public Patient createPatient(@RequestBody Patient patient) {
-        System.out.println("Controller: Creating patient");
-        return patientService.createPatient(patient);
+    public ResponseEntity<Patient> createPatient(@RequestBody Patient patient) {
+        try {
+            logger.info("Controller: Creating patient");
+            Patient savedPatient = patientService.createPatient(patient);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedPatient);
+        } catch (Exception e) {
+            logger.error("Error creating patient", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    // GET patient by ID
+    // GET by ID
     @GetMapping("/{id}")
-    public Patient getPatientById(@PathVariable Long id) {
-        System.out.println("Controller: Fetching patient with id " + id);
-        return patientService.getPatientById(id);
+    public ResponseEntity<Patient> getPatientById(@PathVariable Long id) {
+        try {
+            logger.info("Controller: Fetching patient with id {}", id);
+            Patient patient = patientService.getPatientById(id);
+            return ResponseEntity.ok(patient);
+        } catch (Exception e) {
+            logger.error("Error fetching patient with id {}", id, e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    // UPDATE patient
+    // UPDATE
     @PutMapping("/{id}")
-    public Patient updatePatient(
+    public ResponseEntity<Patient> updatePatient(
             @PathVariable Long id,
             @RequestBody Patient patient) {
 
-        System.out.println("Controller: Updating patient with id " + id);
-        return patientService.updatePatient(id, patient);
+        try {
+            logger.info("Controller: Updating patient with id {}", id);
+            Patient updatedPatient = patientService.updatePatient(id, patient);
+            return ResponseEntity.ok(updatedPatient);
+        } catch (Exception e) {
+            logger.error("Error updating patient with id {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    // DELETE patient
+    // DELETE
     @DeleteMapping("/{id}")
-    public void deletePatient(@PathVariable Long id) {
-        System.out.println("Controller: Deleting patient with id " + id);
-        patientService.deletePatient(id);
+    public ResponseEntity<Void> deletePatient(@PathVariable Long id) {
+        try {
+            logger.info("Controller: Deleting patient with id {}", id);
+            patientService.deletePatient(id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            logger.error("Error deleting patient with id {}", id, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
     }
 }

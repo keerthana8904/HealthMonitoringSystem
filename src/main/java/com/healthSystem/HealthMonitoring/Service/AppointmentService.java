@@ -1,105 +1,100 @@
 package com.healthSystem.HealthMonitoring.Service;
 
 import com.healthSystem.HealthMonitoring.models.Appointment;
+import com.healthSystem.HealthMonitoring.repository.AppointmentRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class AppointmentService {
 
-    // Temporary in-memory DB
-    private final List<Appointment> appointments = new ArrayList<>();
+    private final AppointmentRepository appointmentRepository;
 
-    // GET all appointments
-    public List<Appointment> getAllAppointments() {
+    public AppointmentService(AppointmentRepository appointmentRepository) {
+        this.appointmentRepository = appointmentRepository;
+    }
+
+    public Page<Appointment> getAllAppointments(int page, int size) {
         try {
-            System.out.println("Service: Fetching all appointments");
-            return appointments;
+            return appointmentRepository.findAll(PageRequest.of(page, size));
         } catch (Exception e) {
-            System.out.println("Error fetching appointments: " + e.getMessage());
-            return new ArrayList<>();
+            log.error("Error fetching appointments", e);
+            return Page.empty();
         }
     }
 
-    // GET appointment by ID
     public Appointment getAppointmentById(Long id) {
         try {
-            System.out.println("Service: Fetching appointment with id " + id);
-
-            for (Appointment appointment : appointments) {
-                if (appointment.getId() != null &&
-                        appointment.getId().equals(id)) {
-                    return appointment;
-                }
-            }
-            return null;
+            return appointmentRepository.findById(id).orElse(null);
         } catch (Exception e) {
-            System.out.println("Error fetching appointment: " + e.getMessage());
+            log.error("Error fetching appointment by id", e);
             return null;
         }
     }
 
-    // CREATE appointment
     public Appointment createAppointment(Appointment appointment) {
         try {
-            System.out.println("Service: Creating appointment");
-            appointments.add(appointment);
-            return appointment;
+            if (appointment == null ||
+                    appointment.getPatientId() <= 0 ||
+                    appointment.getDoctorId() <= 0 ||
+                    appointment.getDate() == null) {
+                return null;
+            }
+            return appointmentRepository.save(appointment);
         } catch (Exception e) {
-            System.out.println("Error creating appointment: " + e.getMessage());
+            log.error("Error creating appointment", e);
             return null;
         }
     }
 
-    // UPDATE appointment
     public Appointment updateAppointment(Long id, Appointment updatedAppointment) {
         try {
-            System.out.println("Service: Updating appointment with id " + id);
-            return null;
+            Appointment existing =
+                    appointmentRepository.findById(id).orElse(null);
+
+            if (existing == null || updatedAppointment == null) {
+                return null;
+            }
+
+            existing.setPatientId(updatedAppointment.getPatientId());
+            existing.setDoctorId(updatedAppointment.getDoctorId());
+            existing.setDate(updatedAppointment.getDate());
+
+            return appointmentRepository.save(existing);
         } catch (Exception e) {
-            System.out.println("Error updating appointment: " + e.getMessage());
+            log.error("Error updating appointment", e);
             return null;
         }
     }
 
-    // DELETE appointment
     public void deleteAppointment(Long id) {
         try {
-            System.out.println("Service: Deleting appointment with id " + id);
-            appointments.removeIf(
-                    appointment -> appointment.getId() != null &&
-                            appointment.getId().equals(id)
-            );
+            appointmentRepository.deleteById(id);
         } catch (Exception e) {
-            System.out.println("Error deleting appointment: " + e.getMessage());
+            log.error("Error deleting appointment", e);
         }
     }
 
-    // GET appointments by patient
     public List<Appointment> getAppointmentsByPatient(Long patientId) {
         try {
-            System.out.println("Service: Fetching appointments for patient " + patientId);
-            return null;
-
+            return appointmentRepository.findByPatientId(patientId);
         } catch (Exception e) {
-            System.out.println("Error fetching appointments by patient: " + e.getMessage());
-            return new ArrayList<>();
+            log.error("Error fetching appointments by patient", e);
+            return List.of();
         }
     }
 
-    // GET appointments by doctor
     public List<Appointment> getAppointmentsByDoctor(Long doctorId) {
         try {
-            System.out.println("Service: Fetching appointments for doctor " + doctorId);
-
-            return null;
-
+            return appointmentRepository.findByDoctorId(doctorId);
         } catch (Exception e) {
-            System.out.println("Error fetching appointments by doctor: " + e.getMessage());
-            return new ArrayList<>();
+            log.error("Error fetching appointments by doctor", e);
+            return List.of();
         }
     }
 }

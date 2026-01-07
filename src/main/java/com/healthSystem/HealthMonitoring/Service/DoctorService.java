@@ -1,82 +1,77 @@
 package com.healthSystem.HealthMonitoring.Service;
 
 import com.healthSystem.HealthMonitoring.models.Doctor;
+import com.healthSystem.HealthMonitoring.repository.DoctorRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-
+@Slf4j
 @Service
 public class DoctorService {
 
-    // Temporary in-memory list (acts like DB for now)
-    private final List<Doctor> doctors = new ArrayList<>();
+    private final DoctorRepository doctorRepository;
 
-    // GET all doctors
-    public List<Doctor> getAllDoctors() {
+    public DoctorService(DoctorRepository doctorRepository) {
+        this.doctorRepository = doctorRepository;
+    }
+
+    public Page<Doctor> getAllDoctors(int page, int size) {
         try {
-            System.out.println("Service: Fetching all doctors");
-            return doctors;
+            return doctorRepository.findAll(PageRequest.of(page, size));
         } catch (Exception e) {
-            System.out.println("Error fetching doctors: " + e.getMessage());
-            return new ArrayList<>();
+            log.error("Error fetching doctors", e);
+            return Page.empty();
         }
     }
 
-    // GET doctor by id
     public Doctor getDoctorById(Long id) {
         try {
-            System.out.println("Service: Fetching doctor with id " + id);
-
-            for (Doctor doctor : doctors) {
-                if (doctor.getId().equals(id)) {
-                    return doctor;
-                }
-            }
-            return null; // not found
+            return doctorRepository.findById(id).orElse(null);
         } catch (Exception e) {
-            System.out.println("Error fetching doctor: " + e.getMessage());
+            log.error("Error fetching doctor by id", e);
             return null;
         }
     }
 
-    // CREATE doctor
     public Doctor createDoctor(Doctor doctor) {
         try {
-            System.out.println("Service: Creating doctor");
-            doctors.add(doctor);
-            return doctor;
+            if (doctor == null ||
+                    doctor.getName() == null ||
+                    doctor.getName().isBlank()) {
+                return null;
+            }
+            return doctorRepository.save(doctor);
         } catch (Exception e) {
-            System.out.println("Error creating doctor: " + e.getMessage());
+            log.error("Error creating doctor", e);
             return null;
         }
     }
 
-    // UPDATE doctor
     public Doctor updateDoctor(Long id, Doctor updatedDoctor) {
         try {
-            System.out.println("Service: Updating doctor with id " + id);
+            Doctor existing = doctorRepository.findById(id).orElse(null);
 
-            for (int i = 0; i < doctors.size(); i++) {
-                if (doctors.get(i).getId().equals(id)) {
-                    doctors.set(i, updatedDoctor);
-                    return updatedDoctor;
-                }
+            if (existing == null || updatedDoctor == null) {
+                return null;
             }
-            return null;
+
+            existing.setName(updatedDoctor.getName());
+            existing.setSpecialisation(updatedDoctor.getSpecialisation());
+
+            return doctorRepository.save(existing);
         } catch (Exception e) {
-            System.out.println("Error updating doctor: " + e.getMessage());
+            log.error("Error updating doctor", e);
             return null;
         }
     }
 
-    // DELETE doctor
     public void deleteDoctor(Long id) {
         try {
-            System.out.println("Service: Deleting doctor with id " + id);
-            doctors.removeIf(doctor -> doctor.getId().equals(id));
+            doctorRepository.deleteById(id);
         } catch (Exception e) {
-            System.out.println("Error deleting doctor: " + e.getMessage());
+            log.error("Error deleting doctor", e);
         }
     }
 }

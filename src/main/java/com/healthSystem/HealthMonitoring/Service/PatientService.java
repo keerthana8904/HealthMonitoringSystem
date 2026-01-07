@@ -1,88 +1,122 @@
 package com.healthSystem.HealthMonitoring.Service;
 
+import com.healthSystem.HealthMonitoring.ResourceNotFoundException;
 import com.healthSystem.HealthMonitoring.models.Patient;
+import com.healthSystem.HealthMonitoring.repository.PatientRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 public class PatientService {
 
-    // Temporary in-memory DB
-    private final List<Patient> patients = new ArrayList<>();
+    private static final Logger logger =
+            LoggerFactory.getLogger(PatientService.class);
 
-    // GET all patients
-    public List<Patient> getAllPatients() {
-        try {
-            System.out.println("Service: Fetching all patients");
-            return patients;
-        } catch (Exception e) {
-            System.out.println("Error fetching patients: " + e.getMessage());
-            return new ArrayList<>();
-        }
+    private final PatientRepository patientRepository;
+
+    // Constructor Injection
+    public PatientService(PatientRepository patientRepository) {
+        this.patientRepository = patientRepository;
     }
 
-    // CREATE patient
+    // 1️⃣ GET ALL PATIENTS (PAGINATION)
+    public Page<Patient> getAllPatients(int page, int size) {
+
+        logger.info("Fetching all patients with pagination");
+
+        Page<Patient> patients =
+                patientRepository.findAll(PageRequest.of(page, size));
+
+        if (patients.isEmpty()) {
+            logger.warn("No patients found in database");
+        }
+
+        return patients;
+    }
+
+    // 2️⃣ CREATE PATIENT
     public Patient createPatient(Patient patient) {
-        try {
-            System.out.println("Service: Creating patient");
-            patients.add(patient);
-            return patient;
-        } catch (Exception e) {
-            System.out.println("Error creating patient: " + e.getMessage());
-            return null;
+
+        if (patient == null) {
+            logger.error("Patient object is null");
+            throw new IllegalArgumentException("Patient data cannot be null");
         }
+
+        if (patient.getName() == null || patient.getName().isBlank()) {
+            logger.error("Patient name is empty");
+            throw new IllegalArgumentException("Patient name is required");
+        }
+
+        logger.info("Creating patient with name: {}", patient.getName());
+
+        return patientRepository.save(patient);
     }
 
-    // GET patient by ID
+    // 3️⃣ GET PATIENT BY ID
     public Patient getPatientById(Long id) {
-        try {
-            System.out.println("Service: Fetching patient with id " + id);
 
-            for (Patient patient : patients) {
-                if (patient.getId() != null && patient.getId().equals(id)) {
-                    return patient;
-                }
-            }
-            return null;
-        } catch (Exception e) {
-            System.out.println("Error fetching patient: " + e.getMessage());
-            return null;
+        if (id == null || id <= 0) {
+            logger.error("Invalid patient ID: {}", id);
+            throw new IllegalArgumentException("Invalid patient ID");
         }
+
+        logger.info("Fetching patient with id: {}", id);
+
+        return patientRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Patient not found with id: {}", id);
+                    return new ResourceNotFoundException(
+                            "Patient not found with id: " + id
+                    );
+                });
     }
 
-    // UPDATE patient
+    // 4️⃣ UPDATE PATIENT
     public Patient updatePatient(Long id, Patient updatedPatient) {
-        try {
-            System.out.println("Service: Updating patient with id " + id);
 
-            for (int i = 0; i < patients.size(); i++) {
-                if (patients.get(i).getId() != null &&
-                        patients.get(i).getId().equals(id)) {
-
-                    updatedPatient.setId(id);
-                    patients.set(i, updatedPatient);
-                    return updatedPatient;
-                }
-            }
-            return null;
-        } catch (Exception e) {
-            System.out.println("Error updating patient: " + e.getMessage());
-            return null;
+        if (updatedPatient == null) {
+            throw new IllegalArgumentException(
+                    "Updated patient data cannot be null"
+            );
         }
+
+        logger.info("Updating patient with id: {}", id);
+
+        Patient existingPatient = patientRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.error("Patient not found for update with id: {}", id);
+                    return new ResourceNotFoundException(
+                            "Cannot update. Patient not found with id: " + id
+                    );
+                });
+
+        existingPatient.setName(updatedPatient.getName());
+        existingPatient.setAge(updatedPatient.getAge());
+        existingPatient.setGender(updatedPatient.getGender());
+
+        logger.info("Patient updated successfully with id: {}", id);
+
+        return patientRepository.save(existingPatient);
     }
 
-    // DELETE patient
+    // 5️⃣ DELETE PATIENT
     public void deletePatient(Long id) {
-        try {
-            System.out.println("Service: Deleting patient with id " + id);
-            patients.removeIf(
-                    patient -> patient.getId() != null &&
-                            patient.getId().equals(id)
+
+        logger.info("Deleting patient with id: {}", id);
+
+        if (!patientRepository.existsById(id)) {
+            logger.error("Cannot delete. Patient not found with id: {}", id);
+            throw new ResourceNotFoundException(
+                    "Cannot delete. Patient not found with id: " + id
             );
-        } catch (Exception e) {
-            System.out.println("Error deleting patient: " + e.getMessage());
         }
+
+        patientRepository.deleteById(id);
+        logger.info("Patient deleted successfully with id: {}", id);
     }
 }

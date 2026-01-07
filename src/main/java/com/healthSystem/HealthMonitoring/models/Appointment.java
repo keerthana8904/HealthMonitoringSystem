@@ -16,8 +16,8 @@ public class Appointment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private long patientId;
-    private long doctorId;
+    private long patientId;// link to patient
+    private long doctorId;// which doc belongs
     private String date;
 
 

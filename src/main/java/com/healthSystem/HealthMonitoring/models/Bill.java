@@ -8,15 +8,15 @@ import lombok.*;
 
 @Entity
 @Builder
-@AllArgsConstructor
+@AllArgsConstructor // creates constructor for all pbj
 @NoArgsConstructor
-@Getter
+@Getter // create getter setter methods for all variables
 @Setter
 public class Bill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long patientId;
+    private Long patientId; // linking to patient
     private double amount;
     private String status;
 
