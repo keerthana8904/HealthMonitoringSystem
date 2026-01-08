@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/patients")
 public class PatientController {
@@ -22,19 +24,29 @@ public class PatientController {
         this.patientService = patientService;
     }
 
-    // ✅ GET ALL PATIENTS
-    @GetMapping
-    public ResponseEntity<Page<Patient>> getAllPatients(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "3") int size) {
+//    GET ALL PATIENTS
+    @GetMapping("/all")
+    public ResponseEntity<List<Patient>> getAllPatients(){
 
         logger.info("Controller: Get all patients");
         return ResponseEntity.ok(
-                patientService.getAllPatients(page, size)
+                patientService.getAllPatients()
         );
     }
 
-    // ✅ CREATE PATIENT
+    //  GET ALL PATIENTS with pagination
+    @GetMapping
+    public ResponseEntity<Page<Patient>> internationalisation(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "3") int size) {
+
+        logger.info("Controller: Get all patients WITH PAGINATION");
+        return ResponseEntity.ok(
+                patientService.getAllInternationalisation(page, size)
+        );
+    }
+
+    // CREATE PATIENT
     @PostMapping
     public ResponseEntity<Patient> createPatient(
             @RequestBody Patient patient) {
@@ -50,7 +62,7 @@ public class PatientController {
                 .body(saved);
     }
 
-    // ✅ GET PATIENT BY ID
+    //  GET PATIENT BY ID
     @GetMapping("/{id}")
     public ResponseEntity<Patient> getPatientById(
             @PathVariable Long id) {
@@ -64,7 +76,7 @@ public class PatientController {
         return ResponseEntity.ok(patient);
     }
 
-    // ✅ UPDATE PATIENT
+    //  UPDATE PATIENT
     @PutMapping("/{id}")
     public ResponseEntity<Patient> updatePatient(
             @PathVariable Long id,
@@ -80,7 +92,7 @@ public class PatientController {
         return ResponseEntity.ok(updated);
     }
 
-    // ✅ DELETE PATIENT
+    //  DELETE PATIENT
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePatient(
             @PathVariable Long id) {

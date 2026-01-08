@@ -9,6 +9,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional
 public class PatientService {
@@ -23,10 +25,20 @@ public class PatientService {
         this.patientRepository = patientRepository;
     }
 
-    // ✅ GET ALL PATIENTS (with pagination)
-    public Page<Patient> getAllPatients(int page, int size) {
+    public List<Patient> getAllPatients() {
         try {
             logger.info("Fetching all patients");
+            return patientRepository.findAll();
+        } catch (Exception e) {
+            logger.error("Error fetching patients", e);
+            return List.of();
+        }
+    }
+
+    // ✅ GET ALL PATIENTS (with pagination)
+    public Page<Patient> getAllInternationalisation(int page, int size) {
+        try {
+            logger.info("Fetching all patients BY PAGINATION");
             return patientRepository.findAll(PageRequest.of(page, size));
         } catch (Exception e) {
             logger.error("Error fetching patients", e);
@@ -89,4 +101,6 @@ public class PatientService {
             logger.error("Error deleting patient", e);
         }
     }
+
+
 }
